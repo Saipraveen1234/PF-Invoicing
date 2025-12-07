@@ -243,6 +243,11 @@ app.put('/api/invoices/:id', async (req, res) => {
 });
 
 // Start Server
-app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-});
+// Start Server
+if (require.main === module) {
+    app.listen(port, () => {
+        console.log(`Server running on port ${port}`);
+    });
+}
+
+module.exports = app;
