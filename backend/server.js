@@ -16,16 +16,31 @@ app.use(bodyParser.json());
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_KEY;
 
+let supabase;
 if (!supabaseUrl || !supabaseKey) {
     console.error('Missing Supabase URL or Key in .env file');
+} else {
+    try {
+        supabase = createClient(supabaseUrl, supabaseKey);
+    } catch (e) {
+        console.error('Error initializing Supabase client:', e);
+    }
 }
 
-const supabase = createClient(supabaseUrl, supabaseKey);
+// Helper to check DB connection
+const checkDbConnection = (res) => {
+    if (!supabase) {
+        console.error('Database client not initialized');
+        return res.status(500).json({ error: 'Server Configuration Error: Missing Database Credentials' });
+    }
+    return true;
+};
 
 // Routes
 
 // GET /api/invoices - Fetch all invoices
 app.get('/api/invoices', async (req, res) => {
+    if (!checkDbConnection(res)) return;
     const { data, error } = await supabase
         .from('invoices')
         .select('*')
@@ -54,6 +69,7 @@ app.get('/api/invoices', async (req, res) => {
 
 // GET /api/invoices/next-number - Get the next invoice number
 app.get('/api/invoices/next-number', async (req, res) => {
+    if (!checkDbConnection(res)) return;
     const date = new Date();
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const year = date.getFullYear().toString().slice(-2);
@@ -86,6 +102,7 @@ app.get('/api/invoices/next-number', async (req, res) => {
 
 // GET /api/invoices/:id - Get a single invoice by ID
 app.get('/api/invoices/:id', async (req, res) => {
+    if (!checkDbConnection(res)) return;
     const { id } = req.params;
     console.log('Fetching invoice with ID:', id);
     console.log('ID length:', id.length);
@@ -125,6 +142,7 @@ app.get('/api/invoices/:id', async (req, res) => {
 
 // POST /api/invoices - Create a new invoice
 app.post('/api/invoices', async (req, res) => {
+    if (!checkDbConnection(res)) return;
     const invoice = req.body;
 
     // Generate Invoice Number: INV-MM-YY-Sequence
@@ -185,6 +203,7 @@ app.post('/api/invoices', async (req, res) => {
 
 // PUT /api/invoices/:id - Update invoice status and paid amount
 app.put('/api/invoices/:id', async (req, res) => {
+    if (!checkDbConnection(res)) return;
     const { id } = req.params;
     const { status, paidAmount } = req.body; // paidAmount here is the *incremental* amount being paid
 
